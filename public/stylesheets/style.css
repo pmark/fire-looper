@@ -83,7 +83,7 @@ a:active
   width:2px;
   height:306px;
   background-color: goldenrod;
-  box-shadow: -2px 0px 3px rgba(0,0,0,0.6);
+  box-shadow: -2px 0px 3px rgba(0,0,0,0.5);
 }
 
 .loop-container {

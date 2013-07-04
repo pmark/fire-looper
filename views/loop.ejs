@@ -13,19 +13,18 @@
     <div id="playhead"></div>
 
     <ul class="track-list">
-        <% for (var i=0; i < 3; i++) { 
-
+        <% for (var i=0; i < 3; i++) {
             var t=tracks[i]; 
         %>
 
-        <li>
+        <li id="track-<%= i %>">
         <% if (t) {
-                for (var j=0; j < t.hits.length; j++) {
-                    var hit = t.hits[j]; 
+            for (var j=0; j < t.hits.length; j++) {
+                var hit = t.hits[j]; 
         %>
 
-            A hit has startTime and duration. 
-            1) set left:startTime * 
+            A hit has startTimeSec and duration. 
+            1) set left:startTimeSec * 
 
                 <% } %>
         <% } %>
@@ -45,58 +44,130 @@
 
 
 <script>
-$(function() {
 
-$(".track-list li").click(function() {
-});
+var loop = {
+    duration: 50000,  // <%= loopDuration %>
+    tracks: []
+}
 
-$("#save-btn").click(function() {
-    alert("To do");
-});
+var playhead = {
+    position: 0.0,
+    startTimeSec: null
+};
 
-$("#play-btn").click(function() {
-    playheadStartTime = timestamp();
-    $("#play-btn").hide();
-    $("#stop-btn").show();
-});    
-
-$("#stop-btn").click(function() {
-    playheadStartTime = null;
-    $("#stop-btn").hide();
-    $("#play-btn").show();
-});
-
-
-var playheadPosition = 0.0;
-var loopDuration = 5000;//<%= loopDuration %>;
-var playheadTime = 0.0;
-var playheadStartTime = null;
+var newHit = null;
 
 function timestamp() {
-    return (new Date().getTime() / 1000);
+    return (new Date().getTime() / 1000.0);
 }
 
 function advancePlayhead() {
 
-    if (playheadStartTime === null) {
+    if (playhead.startTimeSec === null) {
         return;
     }
 
     var now = timestamp();
-    var interval = (now - playheadStartTime) * 1000.0;
-    var pctComplete = (interval / loopDuration) * 100.0;
+    var interval = (now - playhead.startTimeSec) * 1000.0;
+    var pctComplete = (interval / loop.duration) * 100.0;
     // console.log(interval, pctComplete);
 
-    if (interval > loopDuration) {
-        playheadStartTime = timestamp();
+    if (interval > loop.duration) {
+        // Reset playhead
+        var old = playhead.startTimeSec;
+        playhead.startTimeSec = timestamp();
+
+        // console.log("new playhead start time:", 
+        //     playhead.startTimeSec, 
+        //     "old:", (playhead.startTimeSec-old));
+
         pctComplete = 0.0;
+        newHit = null;
     }
 
     $("#playhead").css("left", pctComplete+"%");
 }
 
-setInterval(advancePlayhead, 10);
+function formatFloat(f) {
+    return parseInt(f*100)/100;
+}
 
+///////////////////////////////////////////////////
+
+$(function() {
+
+    $(".track-list li").mousedown(function() {
+
+        // Store the number of seconds from the beginning of the loop.
+
+        var hitStartTime = 0.0;
+        var now = timestamp();
+
+        if (playhead.startTimeSec === null) {
+            playhead.startTimeSec = now;
+            $("#play-btn").hide();
+            $("#stop-btn").show();
+            // console.log("new playhead start time:", playhead.startTimeSec);
+        }
+
+        hitStartTime = formatFloat(now - playhead.startTimeSec);
+        var trackNum = $(this).attr("id").split("-")[1];
+        
+        newHit = {
+            startTimeSec:hitStartTime
+        };
+
+        // console.log("Started new hit at", now, '-', playhead.startTimeSec, '=', hitStartTime);
+    });
+
+    $(".track-list li").mouseup(function() {
+        
+        if (newHit) {            
+            var nowMillis = timestamp();
+            var playheadTimeMillis = (nowMillis - playhead.startTimeSec);
+
+            // console.log("nowMillis:", nowMillis, "-", playhead.startTimeSec, ":playheadMillis");
+
+            newHit.durationSec = formatFloat(playheadTimeMillis - newHit.startTimeSec);
+
+            // console.log('Adding hit with duration', 
+            //     playheadTimeMillis, '-', newHit.startTimeSec, 
+            //     "= ", newHit.durationSec);
+
+            // Add new hit to the selected track.
+            var trackNum = parseInt($(this).attr("id").split("-")[1]);
+            loop.tracks[trackNum] = (loop.tracks[trackNum] || []);
+            loop.tracks[trackNum].push(newHit);
+
+            newHit = {};
+
+            console.log("Tracks:", 
+                "\n0: ", JSON.stringify(loop.tracks[0]), 
+                "\n1: ", JSON.stringify(loop.tracks[1]), 
+                "\n2: ", JSON.stringify(loop.tracks[2]), 
+                "\n");
+        }
+
+    });
+
+
+    $("#save-btn").click(function() {
+        alert("To do");
+    });
+
+    $("#play-btn").click(function() {
+        playhead.startTimeSec = timestamp();
+        $("#play-btn").hide();
+        $("#stop-btn").show();
+    });    
+
+    $("#stop-btn").click(function() {
+        playhead.startTimeSec = null;
+        $("#stop-btn").hide();
+        $("#play-btn").show();
+    });
+
+    setInterval(advancePlayhead, 10);
 });
 
 </script>
