@@ -1,0 +1,24 @@
+{
+  "name": "fire-looper",
+  "version": "0.0.1",
+  "description": "Fire puffer loop builder and Arduino program generator.",
+  "main": "app.js",
+  "engines": {
+    "node": "0.8",
+    "npm": ">=1.1"
+  },
+  "repository": "git@github.com:pmark/FireLooper.git",
+  "author": "P. Mark Anderson",
+  "license": "MIT",
+  "dependencies": {
+    "mongoose": "3.5.7",
+    "express": "~3.2.5",
+    "ejs": "~0.8.4"
+  },
+  "changelog": [
+    {
+      "0.0.1": "Initial release"
+    }
+  ],
+  "homepage": "http://fire-looper.herokuapp.com"
+}
