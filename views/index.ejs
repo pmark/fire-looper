@@ -1,5 +1,4 @@
-
-<!DOCTYPE html>
+1<!DOCTYPE html>
 <html>
 <head>
     <title>Fire Looper</title>
@@ -10,8 +9,24 @@
 </head>
 <body>
 
-<h3>Fire Loops</h3>
+<h3><%= loops.length %> Fire Loop<%= (loops.length == 1 ? '' : 's') %></h3>
 
+<ul class="loop-list">
+    <li rel="new">+ New </li>  
 
+    <% for (var i=0; i < loops.length; i++) { var l=loops[i]; %>
+    <li rel="<%= l.id %>">Loop <%= l.id %> by <%= l.creator %></li>    
+    <% } %>
+</ul>
+
+<script>
+$(function() {
+    $(".loop-list li").click(function() {
+        var loopId = $(this).attr("rel");
+        window.location = "/loops/" + loopId;
+    })
+});
+
+</script>
 </body>
 </html>

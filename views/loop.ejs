@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Loop <%= loopId %></title>
+    <link href="/stylesheets/style.css" rel="stylesheet"/>
+    <link href="/stylesheets/normalize.css" rel="stylesheet"/>
+    <script src="/javascripts/jquery.min.js"></script>
+    <!--script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script-->
+</head>
+<body>
+
+<div class="loop-container">
+    <div id="playhead"></div>
+
+    <ul class="track-list">
+        <% for (var i=0; i < 3; i++) { 
+
+            var t=tracks[i]; 
+        %>
+
+        <li>
+        <% if (t) {
+                for (var j=0; j < t.hits.length; j++) {
+                    var hit = t.hits[j]; 
+        %>
+
+            A hit has startTime and duration. 
+            1) set left:startTime * 
+
+                <% } %>
+        <% } %>
+
+        </li>
+        <% } %>
+    </ul>
+</div>
+
+<div class="menu">
+<!-- <small>Loop <%= loopId %></small> -->
+<a href="#" id="save-btn">Save</a>
+&middot;
+<a href="#" id="play-btn">Play</a>
+<a href="#" id="stop-btn" style="display:none;">Stop</a>
+</div>
+
+
+<script>
+$(function() {
+
+$(".track-list li").click(function() {
+});
+
+$("#save-btn").click(function() {
+    alert("To do");
+});
+
+$("#play-btn").click(function() {
+    playheadStartTime = timestamp();
+    $("#play-btn").hide();
+    $("#stop-btn").show();
+});    
+
+$("#stop-btn").click(function() {
+    playheadStartTime = null;
+    $("#stop-btn").hide();
+    $("#play-btn").show();
+});
+
+
+var playheadPosition = 0.0;
+var loopDuration = 5000;//<%= loopDuration %>;
+var playheadTime = 0.0;
+var playheadStartTime = null;
+
+function timestamp() {
+    return (new Date().getTime() / 1000);
+}
+
+function advancePlayhead() {
+
+    if (playheadStartTime === null) {
+        return;
+    }
+
+    var now = timestamp();
+    var interval = (now - playheadStartTime) * 1000.0;
+    var pctComplete = (interval / loopDuration) * 100.0;
+    // console.log(interval, pctComplete);
+
+    if (interval > loopDuration) {
+        playheadStartTime = timestamp();
+        pctComplete = 0.0;
+    }
+
+    $("#playhead").css("left", pctComplete+"%");
+}
+
+setInterval(advancePlayhead, 10);
+
+});
+
+</script>
+</body>
+</html>

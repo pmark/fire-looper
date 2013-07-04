@@ -10,7 +10,7 @@ h3 {
 }
 
 body {
-  padding: 10px;
+  padding: 0px;
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
   background:violet;
   color:yellow;
@@ -18,4 +18,74 @@ body {
 
 a {
   color: #00B7FF;
+}
+
+ul.loop-list {
+  margin:10px 0;
+  padding:0;
+}
+
+.loop-list li {
+  display:block;
+  padding:10px 20px;
+  margin:0;
+}
+
+.loop-list li:hover {
+  background-color:purple;
+  
+}
+
+
+ul.track-list {
+  margin:0px 0;
+  padding:0;
+  border:1px solid #222;
+  border-width:10px 0;
+
+}
+
+.track-list li {
+  display:block;
+  height:100px;
+  padding:0px 20px;
+  margin:0;
+  background-color:#444;
+  border:1px solid #555;
+}
+
+.track-list li:hover {
+  background-color:#333;
+  border:1px solid #888;
+  
+}
+
+a,
+a:visited,
+a:hover
+ {
+  color:purple;
+  text-decoration:none;
+}
+
+a:active
+ {
+  color:white;
+}
+
+.menu {
+  padding:20px;
+}
+
+#playhead {
+  position:absolute;
+  top:10px;
+  width:2px;
+  height:306px;
+  background-color: goldenrod;
+  box-shadow: -2px 0px 3px rgba(0,0,0,0.6);
+}
+
+.loop-container {
+  position:relative;
 }

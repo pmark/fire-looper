@@ -122,23 +122,32 @@ app.configure(function() {
 });
 
 app.get("/loops/:loopId", function(req, res) {
-    Loops.find({$id:req.params.loopId}).exec(function(err, result) { 
-        if (err) {
-            console.log("Error fetching loop:", req.params.loopId, err);
-            res.send(err);
-        }
-        else {
-            if (result) {
-                console.log("Found loop: ", result.length);
 
-                var responseData = {
-                    loop:result[0]
-                };
+    var responseData = {
+        loopId:"", 
+        loopDuration:6000,
+        tracks:[]
+    };
 
-                res.render('loop', responseData);
+    if (req.params.loopId === 'new') {
+        // New loop
+        res.render('loop', responseData);
+    }
+    else {
+        Loops.find({$id:req.params.loopId}).exec(function(err, result) { 
+            if (err) {
+                console.log("Error fetching loop:", req.params.loopId, err);
+                res.send(err);
             }
-        }
-    });
+            else {
+                if (result) {
+                    console.log("Found loop: ", result.length);
+                    responseData.l = result[0];
+                    res.render('loop', responseData);
+                }
+            }
+        });
+    }
 });
 
 app.get("/", function(req, res) {
