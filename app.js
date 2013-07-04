@@ -34,8 +34,10 @@
 
 var express = require("express"),
     http = require("http"),
+    path = require("path"),
     mongoose = require ("mongoose"),
-    app = express();
+    app = express(),
+    publicPath = path.join(__dirname, 'public');
 
 mongoose.set('debug', true);
 
@@ -116,9 +118,10 @@ app.configure(function() {
     app.use(express.bodyParser());
     app.use(express.methodOverride());
     app.use(app.router);
+    app.use(express.static(publicPath));
 });
 
-app.get("/loop/:loopId", function(req, res) {
+app.get("/loops/:loopId", function(req, res) {
     Loops.find({$id:req.params.loopId}).exec(function(err, result) { 
         if (err) {
             console.log("Error fetching loop:", req.params.loopId, err);
@@ -132,14 +135,13 @@ app.get("/loop/:loopId", function(req, res) {
                     loop:result[0]
                 };
 
-                res.json(responseData);
+                res.render('loop', responseData);
             }
         }
     });
 });
 
 app.get("/", function(req, res) {
-
     Loops.find({}).exec(function(err, result) { 
         if (err) {
             console.log("Error fetching loops:", err);
@@ -154,7 +156,7 @@ app.get("/", function(req, res) {
                     loops:result
                 };
 
-                res.json(responseData);
+                res.render('index', responseData);
             }
         }
     });
