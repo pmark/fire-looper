@@ -9,8 +9,13 @@
 </head>
 <body>
 
+<audio src="/audio/click.wav" id="click"></audio>
+
 <div class="loop-container">
     <div id="playhead"></div>
+    <div id="measure-1" class="measure"></div>
+    <div id="measure-2" class="measure"></div>
+    <div id="measure-3" class="measure"></div>
 
     <ul class="track-list">
         <% for (var i=0; i < 3; i++) {
@@ -34,19 +39,26 @@
     </ul>
 </div>
 
-<div class="menu">
-<!-- <small>Loop <%= loopId %></small> -->
-<a href="#" id="save-btn">Save</a>
-&middot;
-<a href="#" id="play-btn">Play</a>
-<a href="#" id="stop-btn" style="display:none;">Stop</a>
+<div class="menu right">
+<a href="/" id="loops-btn">&laquo; Loops</a>
 </div>
 
+<div class="menu">
+<!-- <small>Loop <%= loopId %></small> -->
+<a href="#" id="play-btn">Play</a>
+<a href="#" id="stop-btn" style="display:none;">Stop</a>
+&nbsp;
+<a href="#" id="undo-btn">Undo</a>
+&nbsp;
+<a href="#" id="clear-btn">Clear</a>
+&nbsp;
+<a href="#" id="save-btn">Save</a>
+</div>
 
 <script>
 
 var loop = {
-    duration: 50000,  // <%= loopDuration %>
+    duration: 10000,  // <%= loopDuration %>
     tracks: []
 }
 
@@ -55,41 +67,70 @@ var playhead = {
     startTimeSec: null
 };
 
-var newHit = null;
+var trackHits = [false,false,false];
 
 function timestamp() {
     return (new Date().getTime() / 1000.0);
 }
 
+
 function advancePlayhead() {
 
-    if (playhead.startTimeSec === null) {
-        return;
-    }
+    var pctComplete = 0.0;
 
-    var now = timestamp();
-    var interval = (now - playhead.startTimeSec) * 1000.0;
-    var pctComplete = (interval / loop.duration) * 100.0;
-    // console.log(interval, pctComplete);
+    if (playhead.startTimeSec !== null) {
+        var nowMillis = timestamp();
+        var playheadTimeMillis = (nowMillis - playhead.startTimeSec);
 
-    if (interval > loop.duration) {
-        // Reset playhead
-        var old = playhead.startTimeSec;
-        playhead.startTimeSec = timestamp();
+        $(trackHits).each(function(trackNum, newHit) {
+            if (newHit) {            
+                newHit.durationSec = formatFloat(playheadTimeMillis - newHit.startTimeSec);
+                var hitNum = track(trackNum).length;
+                var $hitElem = $("#" + hitMarkerId(trackNum, hitNum));
 
-        // console.log("new playhead start time:", 
-        //     playhead.startTimeSec, 
-        //     "old:", (playhead.startTimeSec-old));
+                if ($hitElem) {
+                    var w = hitWidth(newHit);
+                    $hitElem.width(w+'%');
+                    // console.log("newHit for track", trackNum, w);
+                }
+            }
+        });
 
-        pctComplete = 0.0;
-        newHit = null;
+        var now = timestamp();
+        var interval = (now - playhead.startTimeSec) * 1000.0;
+        pctComplete = (interval / loop.duration) * 100.0;
+
+        if (interval > loop.duration) {
+            // Reset playhead
+            var old = playhead.startTimeSec;
+            playhead.startTimeSec = timestamp();
+            pctComplete = 0.0;
+            trackHits = [false,false,false];
+        }
     }
 
     $("#playhead").css("left", pctComplete+"%");
 }
 
+function hitWidth(hit) {
+    // console.log("hitWidth: ", (hit.durationSec*1000.0), '/', loop.duration, $(".track-list").width());
+
+    var trackWidthPx = $(".track-list").width();
+    var wPx = parseInt(hit.durationSec*1000.0 / loop.duration * trackWidthPx);
+    return wPx / trackWidthPx * 100.0;
+}
+
 function formatFloat(f) {
     return parseInt(f*100)/100;
+}
+
+function track(num) {
+    loop.tracks[num] = (loop.tracks[num] || []);
+    return loop.tracks[num];
+}
+
+function hitMarkerId(trackNum, hitNum) {
+    return ('hit-' + trackNum + '-' + hitNum);
 }
 
 ///////////////////////////////////////////////////
@@ -97,6 +138,8 @@ function formatFloat(f) {
 $(function() {
 
     $(".track-list li").mousedown(function() {
+    var trackNum = parseInt($(this).attr("id").split("-")[1]);
+
 
         // Store the number of seconds from the beginning of the loop.
 
@@ -111,33 +154,44 @@ $(function() {
         }
 
         hitStartTime = formatFloat(now - playhead.startTimeSec);
-        var trackNum = $(this).attr("id").split("-")[1];
         
         newHit = {
-            startTimeSec:hitStartTime
+            startTimeSec: hitStartTime,
+            durationSec: 0.00
         };
+
+        trackHits[trackNum] = newHit;
+
+
+        // Add a hit marker to the track
+
+        var now = timestamp();
+        var interval = (now - playhead.startTimeSec) * 1000.0;
+        var pctComplete = (interval / loop.duration) * 100.0;
+
+        var hitMarker = $('<div>')
+            .attr('class', 'hit-marker')
+            .attr('id', hitMarkerId(trackNum, track(trackNum).length))
+            .css('left', pctComplete+'%');
+
+        $(this).append(hitMarker);
+
 
         // console.log("Started new hit at", now, '-', playhead.startTimeSec, '=', hitStartTime);
     });
 
     $(".track-list li").mouseup(function() {
+
+        var trackNum = parseInt($(this).attr("id").split("-")[1]);
+        trackHits[trackNum] = false;
         
-        if (newHit) {            
-            var nowMillis = timestamp();
-            var playheadTimeMillis = (nowMillis - playhead.startTimeSec);
-
-            // console.log("nowMillis:", nowMillis, "-", playhead.startTimeSec, ":playheadMillis");
-
-            newHit.durationSec = formatFloat(playheadTimeMillis - newHit.startTimeSec);
-
-            // console.log('Adding hit with duration', 
-            //     playheadTimeMillis, '-', newHit.startTimeSec, 
-            //     "= ", newHit.durationSec);
+        if (newHit) {
+            // var nowMillis = timestamp();
+            // var playheadTimeMillis = (nowMillis - playhead.startTimeSec);
+            // newHit.durationSec = formatFloat(playheadTimeMillis - newHit.startTimeSec);
 
             // Add new hit to the selected track.
-            var trackNum = parseInt($(this).attr("id").split("-")[1]);
-            loop.tracks[trackNum] = (loop.tracks[trackNum] || []);
-            loop.tracks[trackNum].push(newHit);
+            track(trackNum).push(newHit);
 
             newHit = {};
 

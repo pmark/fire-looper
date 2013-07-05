@@ -33,9 +33,8 @@ ul.loop-list {
 
 .loop-list li:hover {
   background-color:purple;
-  
+  cursor:pointer;
 }
-
 
 ul.track-list {
   margin:0px 0;
@@ -52,12 +51,61 @@ ul.track-list {
   margin:0;
   background-color:#444;
   border:1px solid #555;
+  position:relative;
 }
 
 .track-list li:hover {
   background-color:#333;
   border:1px solid #888;
-  
+  cursor:pointer;
+}
+
+#playhead {
+  position:absolute;
+  opacity:.7;
+  z-index:100;
+  top:10px;
+  width:5px;
+  height:306px;
+  background-color: yellow;
+  box-shadow: -2px 0px 3px rgba(0,0,0,0.5);
+}
+
+.measure {
+  position:absolute;
+  opacity:.5;
+  z-index:100;
+  top:10px;
+  width:1px;
+  height:306px;
+  background-color: #111;
+  box-shadow: -1px 0px 1px rgba(0,0,0,0.25);
+}
+
+#measure-1 {
+  left:25%;
+}
+
+#measure-2 {
+  left:50%;
+}
+
+#measure-3 {
+  left:75%;
+}
+
+.loop-container {
+  position:relative;
+}
+
+.hit-marker {
+  background-color: orange;
+  border:1px solid yellow;
+  position:absolute;
+  height:60px;
+  top:20px;
+  width:1px;
+  border-radius: 40px;
 }
 
 a,
@@ -66,26 +114,29 @@ a:hover
  {
   color:purple;
   text-decoration:none;
+  font-weight: 600;
 }
 
-a:active
- {
-  color:white;
+a:active {
+  color:#000;
+  text-shadow: 0px 0px 20px rgba(0,0,0,0.9);  
+}
+
+.menu.right {
+  float:right;
 }
 
 .menu {
   padding:20px;
+  color:purple;
+  float:left;
 }
 
-#playhead {
-  position:absolute;
-  top:10px;
-  width:2px;
-  height:306px;
-  background-color: goldenrod;
-  box-shadow: -2px 0px 3px rgba(0,0,0,0.5);
+.menu:hover a {
+  text-shadow: 1px 1px 20px rgba(255, 255, 0, 0.6);
 }
 
-.loop-container {
-  position:relative;
+.menu a:active {
+  color:violet;
+  text-shadow: 0px 0px 10px rgba(255, 255, 0, 1.0);
 }
