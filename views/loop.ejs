@@ -55,6 +55,14 @@
 <a href="#" id="save-btn">Save</a>
 </div>
 
+<div id="tap-pad">
+    <p>
+    Tap-in
+    <br/>
+    <span id="tap-pad-count">4</span>
+    </p>
+</div>
+
 <script>
 
 var loop = {
@@ -68,6 +76,7 @@ var playhead = {
 };
 
 var trackHits = [false,false,false];
+var tapInCount = 4;
 
 function timestamp() {
     return (new Date().getTime() / 1000.0);
@@ -220,6 +229,31 @@ $(function() {
         $("#stop-btn").hide();
         $("#play-btn").show();
     });
+
+    $("#tap-pad").mousedown(function() {
+        // Tap 4 times
+        // On tap, hit at 0, 25%, 50%, 75%
+
+        $(this).addClass("active");
+        tapInCount--;
+
+        if (tapInCount < 1) {
+            $(this).addClass("hidden");
+
+        }
+        else {
+            $("#tap-pad-count").html(tapInCount);            
+        }
+
+    });
+
+    $("#tap-pad").mouseup(function() {
+        // Tap 4 times
+        // On tap, hit at 0, 25%, 50%, 75%
+
+        $(this).removeClass("active");
+    });
+
 
     setInterval(advancePlayhead, 10);
 });

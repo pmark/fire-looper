@@ -140,3 +140,64 @@ a:active {
   color:violet;
   text-shadow: 0px 0px 10px rgba(255, 255, 0, 1.0);
 }
+
+#tap-pad {
+  background-color:#999;
+  border:1px solid #333;
+  border-radius:8px;
+  width:60px;
+  height:60px;
+  margin:10px auto;
+  box-shadow: 3px 3px 3px rgba(0,0,0, 0.4);
+}
+
+#tap-pad.active {
+  border:1px solid #222;
+  background-color:#888;  
+  box-shadow: 0px 0px 3px rgba(0,0,0, 1.0);
+}
+
+#tap-pad.active p {
+  color:#ddd;
+}
+
+#tap-pad p {
+  color:#333;
+  text-align:center;
+  vertical-align: middle;
+  width:100%;
+  padding:0;
+}
+
+#tap-pad.hidden {
+  -webkit-transform: scale(0,0) !important;
+  -webkit-transition:-webkit-transform 250ms ease-out;
+}
+
+.fadedIn{
+  opacity:1.0 !important;
+  -webkit-transition:opacity 500ms ease-out;
+  -moz-transition:opacity 500ms ease-out
+  -o-transition:opacity 500ms ease-out
+  -ms-transition:opacity 500ms ease-out
+  transition:opacity 500ms ease-out;
+}
+
+.fadedOut{opacity:0.0 !important;-webkit-transition:opacity 300ms ease-out;-moz-transition:opacity 300ms ease-out;-o-transition:opacity 300ms ease-out;-ms-transition:opacity 300ms ease-out;transition:opacity 300ms ease-out;}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
