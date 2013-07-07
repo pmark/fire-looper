@@ -40,7 +40,10 @@
 </div>
 
 <div class="metadata">
-    <span id="loop-bpm"></span>
+    <input type="text" id="loop-duration" value=""/>
+    sec
+    &nbsp;
+    <input type="text" id="loop-bpm" value=""/>
     bpm
 </div>
 
@@ -160,7 +163,28 @@ function hitMarkerId(trackNum, hitNum) {
 
 $(function() {
 
-    $("#loop-bpm").html(loop.bpm);
+    $("#loop-bpm")
+        .val(loop.bpm)
+        .click(function() {
+            $(this).select();
+        })
+        .change(function() {
+            var newBpm = parseInt($(this).val());
+            newBpm = Math.max(1, Math.min(newBpm, 1000));
+            loop.bpm = newBpm;
+            $(this).val(loop.bpm);
+        });
+
+    $("#loop-duration")
+        .val(loop.duration / 1000)
+        .click(function() {
+            $(this).select();
+        })
+        .change(function() {
+            var newDurationSec = parseInt($(this).val() * 10) / 10;
+            loop.duration = newDurationSec * 1000;
+            $(this).val(newDurationSec);
+        });
 
     $(".track-list li").mousedown(function() {
         
@@ -268,7 +292,6 @@ $(function() {
 
         if (previousTapAt) {
             var diffSinceLastTap = (now - previousTapAt);
-            console.log("diff since last", diffSinceLastTap);
 
             if (diffSinceLastTap > 3.0) {
                 // reset
@@ -285,7 +308,6 @@ $(function() {
         tapIn.count++;
 
         var diffSinceFirstTap = (tapIn.lastTapAt - tapIn.firstTapAt);
-        console.log("since first:", tapIn.lastTapAt, '-', tapIn.firstTapAt, '=', diffSinceFirstTap)
 
         if (diffSinceFirstTap > 0) {
             // If it takes diff sec to do 2 beats, 
@@ -294,7 +316,7 @@ $(function() {
         }
 
         // $("#tap-pad-count").html(tapIn.count);
-        $("#loop-bpm").html(loop.bpm);
+        $("#loop-bpm").val(loop.bpm);
 
         if (tapIn.count < 1) {
             // $(this).addClass("hidden");

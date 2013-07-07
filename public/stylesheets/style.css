@@ -62,10 +62,10 @@ ul.track-list {
 
 #playhead {
   position:absolute;
-  opacity:.7;
+  opacity:.85;
   z-index:100;
   top:10px;
-  width:5px;
+  width:3px;
   height:306px;
   background-color: yellow;
   box-shadow: -2px 0px 3px rgba(0,0,0,0.5);
@@ -78,10 +78,23 @@ ul.track-list {
 
 .metadata {
   text-align:right;
-  margin:4px;
+  margin:4px 20px 0 20px;
+}
+
+.metadata input {
+  border:none;
+  background-color:transparent;
+  width:36px;
+  text-align:right;
+  color:yellow;
 }
 
 #loop-bpm {
+  text-decoration: underline;
+}
+
+#loop-duration {
+  text-decoration: underline;
 }
 
 .measure {
@@ -140,7 +153,7 @@ a:active {
 }
 
 .menu {
-  padding:20px;
+  padding:10px 20px;
   color:purple;
   float:left;
 }
