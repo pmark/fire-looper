@@ -159,12 +159,12 @@ a:active {
 }
 
 .menu:hover a {
-  text-shadow: 1px 1px 20px rgba(255, 255, 0, 0.6);
+  text-shadow: 1px 1px 20px rgba(255, 255, 255, 0.8);
 }
 
 .menu a:active {
   color:violet;
-  text-shadow: 0px 0px 10px rgba(255, 255, 0, 1.0);
+  text-shadow: 0px 0px 10px rgba(255, 255, 255, 1.0);
 }
 
 #tap-pad {
