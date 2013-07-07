@@ -2,8 +2,8 @@
 <html>
 <head>
     <title>Loop <%= loopId %></title>
-    <link href="/stylesheets/style.css" rel="stylesheet"/>
     <link href="/stylesheets/normalize.css" rel="stylesheet"/>
+    <link href="/stylesheets/style.css" rel="stylesheet"/>
     <script src="/javascripts/jquery.min.js"></script>
     <!--script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script-->
 </head>
@@ -39,6 +39,12 @@
     </ul>
 </div>
 
+<div class="metadata">
+    <span id="loop-bpm"></span>
+    bpm
+</div>
+
+
 <div class="menu right">
 <a href="/" id="loops-btn">&laquo; Loops</a>
 </div>
@@ -58,15 +64,18 @@
 <div id="tap-pad">
     <p>
     Tap-in
-    <br/>
-    <span id="tap-pad-count">4</span>
     </p>
 </div>
+
+<br/>
+<br/>
+
 
 <script>
 
 var loop = {
     duration: 10000,  // <%= loopDuration %>
+    bpm: 90,
     tracks: []
 }
 
@@ -76,7 +85,12 @@ var playhead = {
 };
 
 var trackHits = [false,false,false];
-var tapInCount = 4;
+
+var tapIn = {
+    count: 0,
+    firstTapAt: null,
+    lastTapAt: null
+}
 
 function timestamp() {
     return (new Date().getTime() / 1000.0);
@@ -146,9 +160,13 @@ function hitMarkerId(trackNum, hitNum) {
 
 $(function() {
 
-    $(".track-list li").mousedown(function() {
-    var trackNum = parseInt($(this).attr("id").split("-")[1]);
+    $("#loop-bpm").html(loop.bpm);
 
+    $(".track-list li").mousedown(function() {
+        
+        $(".loop-container").addClass("recording");
+
+        var trackNum = parseInt($(this).attr("id").split("-")[1]);
 
         // Store the number of seconds from the beginning of the loop.
 
@@ -191,6 +209,8 @@ $(function() {
 
     $(".track-list li").mouseup(function() {
 
+        $(".loop-container").removeClass("recording");
+        
         var trackNum = parseInt($(this).attr("id").split("-")[1]);
         trackHits[trackNum] = false;
         
@@ -235,14 +255,51 @@ $(function() {
         // On tap, hit at 0, 25%, 50%, 75%
 
         $(this).addClass("active");
-        tapInCount--;
 
-        if (tapInCount < 1) {
-            $(this).addClass("hidden");
+        if (!tapIn.firstTapAt) {
+            tapIn.firstTapAt = now;
+            tapIn.count = 0;
 
         }
+
+        var now = timestamp();
+        // tapIn.firstTapAt = tapIn.firstTapAt || now;
+        var previousTapAt = tapIn.lastTapAt;
+
+        if (previousTapAt) {
+            var diffSinceLastTap = (now - previousTapAt);
+            console.log("diff since last", diffSinceLastTap);
+
+            if (diffSinceLastTap > 3.0) {
+                // reset
+                tapIn.count = 0;
+                console.log("reseting tap-in")
+            }
+        }
+
+        if (tapIn.count === 0) {
+            tapIn.firstTapAt = now;
+        }
+
+        tapIn.lastTapAt = now;
+        tapIn.count++;
+
+        var diffSinceFirstTap = (tapIn.lastTapAt - tapIn.firstTapAt);
+        console.log("since first:", tapIn.lastTapAt, '-', tapIn.firstTapAt, '=', diffSinceFirstTap)
+
+        if (diffSinceFirstTap > 0) {
+            // If it takes diff sec to do 2 beats, 
+            // how many beats would happen in 1 minute
+            loop.bpm = parseInt(60.0 * tapIn.count / diffSinceFirstTap);            
+        }
+
+        // $("#tap-pad-count").html(tapIn.count);
+        $("#loop-bpm").html(loop.bpm);
+
+        if (tapIn.count < 1) {
+            // $(this).addClass("hidden");
+        }
         else {
-            $("#tap-pad-count").html(tapInCount);            
         }
 
     });
