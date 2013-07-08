@@ -133,12 +133,14 @@ ul.track-list {
 
 .hit-marker {
   background-color: orange;
-  border:1px solid yellow;
-  position:absolute;
-  height:60px;
-  top:20px;
-  width:1px;
-  border-radius: 40px;
+  border: 1px solid yellow;
+  border-width: 1px 0;  
+  position: absolute;
+  height: 60px;
+  top: 20px;
+  width: 1px;
+  border-radius: 4px;
+  /*opacity: 0.95;*/
 }
 
 a,
@@ -228,6 +230,31 @@ a:active {
 
 .fadedOut{opacity:0.0 !important;-webkit-transition:opacity 300ms ease-out;-moz-transition:opacity 300ms ease-out;-o-transition:opacity 300ms ease-out;-ms-transition:opacity 300ms ease-out;transition:opacity 300ms ease-out;}
 
+#exporter {
+  display:none;
+  color:black;
+  font-family: courier;
+  position: absolute;
+  z-index: 200;
+/*  top:0;
+  left:0;
+*/  padding:50px;
+  background-color: white;
+  /*opacity:1.0;*/
+  height:300px;
+  width:300px;
+  margin:auto;
+  /*border-radius: 40px;*/
+  border:10px solid black;
+  overflow: scroll;
+}
+
+#exporter .content {
+  border-left: 1px dotted #cfcfcf;
+  margin-left: 20px;
+  padding-left:20px;
+  /*width:100%;*/
+}
 
 
 
