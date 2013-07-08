@@ -40,11 +40,13 @@
 </div>
 
 <div class="metadata">
-    <input type="text" id="loop-duration" value=""/>
+    <input type="text" id="loop-duration" value="" disabled/>
     sec
     &nbsp;
-    <input type="text" id="loop-bpm" value=""/>
-    bpm
+    <span class="loop-bpm-container">
+        <input type="text" id="loop-bpm" value=""/>
+        bpm
+    </span>
 </div>
 
 
@@ -57,8 +59,8 @@
 <a href="#" id="play-btn">Play</a>
 <a href="#" id="stop-btn" style="display:none;">Stop</a>
 &nbsp;
-<a href="#" id="undo-btn">Undo</a>
-&nbsp;
+<!-- <a href="#" id="undo-btn">Undo</a>
+&nbsp; -->
 <a href="#" id="clear-btn">Clear</a>
 &nbsp;
 <a href="#" id="save-btn">Save</a>
@@ -78,18 +80,14 @@
 
 <script>
 
-var loop = {
-    duration: 5000,  // <%= loopDuration %>
-    bpm: 90,
-    tracks: []
-}
+var loop = {};
+
+var trackHits = [false,false,false];
 
 var playhead = {
     position: 0.0,
     startTimeSec: null
 };
-
-var trackHits = [false,false,false];
 
 var tapIn = {
     count: 0,
@@ -253,15 +251,147 @@ function exportLoop() {
 
     $(puffCommands).each(function(i, command) {
         console.log(i, command);
-    })
+    });
+}
+
+function bpmDidChange() {
+    $("#loop-bpm").val(loop.bpm);
+
+    // Set loop duration for 4 measures with 4 beats each.
+
+    var MEASURES = 4;
+    var BEATS_PER_MEASURE = 4;
+    var measuresPerMinute = loop.bpm / BEATS_PER_MEASURE;
+    var secondsPerMeasure = 1 / measuresPerMinute / 60;
+    loop.duration = MEASURES * secondsPerMeasure * 1000 * 1000;
+    $("#loop-duration").val(parseInt(loop.duration / 100) / 10);
+}
+
+function startPlayback() {
+    playhead.startTimeSec = timestamp();
+    $("#play-btn").hide();
+    $("#stop-btn").show();    
+}
+
+function stopPlayback() {
+    playhead.startTimeSec = null;
+    $("#stop-btn").hide();
+    $("#play-btn").show();
+}
+
+function togglePlay() {    
+    var playing = !$("#play-btn").is(":visible");
+
+    if (playing) {
+        stopPlayback();
+    }
+    else {
+        startPlayback();
+    }
+}
+
+function clearLoop(confirmation) {
+
+    stopPlayback();
+
+    confirmation = (typeof(confirmation) === 'undefined' ? true : false);
+
+    if (!confirmation || confirm("Really clear loop?")) {
+        loop = {
+            duration: null,  // <%= loopDuration %>
+            bpm: loop.bpm || 90,
+            tracks: []
+        }
+
+        bpmDidChange();
+
+        trackHits = [false,false,false];
+
+        $(".hit-marker").remove();        
+    }
+}
+
+function maybeClearTapInCount() {
+    // var diffSinceLastTap = (timestamp() - tapIn.lastTapAt);
+
+    // if (diffSinceLastTap > 3.0) {
+        // reset
+        tapIn.count = 0;
+        $(".loop-bpm-container").removeClass("active");
+    // }
+}
+
+function startRecordingHitOnTrack(trackNum) {
+
+    if (trackHits[trackNum]) {
+        return;
+    }
+    
+    $(".loop-container").addClass("recording");
+
+    var $track = $("#track-" + trackNum);
+
+    // Store the number of seconds from the beginning of the loop.
+
+    var hitStartTime = 0.0;
+    var now = timestamp();
+
+    if (playhead.startTimeSec === null) {
+        playhead.startTimeSec = now;
+        $("#play-btn").hide();
+        $("#stop-btn").show();
+        // console.log("new playhead start time:", playhead.startTimeSec);
+    }
+
+    hitStartTime = formatFloat(now - playhead.startTimeSec);
+    
+    newHit = {
+        startTimeSec: hitStartTime,
+        durationSec: 0.00
+    };
+
+    trackHits[trackNum] = newHit;
+
+
+    // Add a hit marker to the track
+
+    var now = timestamp();
+    var interval = (now - playhead.startTimeSec) * 1000.0;
+    var pctComplete = (interval / loop.duration) * 100.0;
+
+    var hitMarker = $('<div>')
+        .attr('class', 'hit-marker')
+        .attr('id', hitMarkerId(trackNum, track(trackNum).length))
+        .css('left', pctComplete+'%');
+
+    $track.append(hitMarker);
+}
+
+function stopRecordingHitOnTrack(trackNum) {
+    $(".loop-container").removeClass("recording");
+    
+    var newHit = trackHits[trackNum];
+    trackHits[trackNum] = false;
+    
+    if (newHit) {
+        track(trackNum).push(newHit);
+
+        console.log("Tracks:", 
+            "\n0: ", JSON.stringify(loop.tracks[0]), 
+            "\n1: ", JSON.stringify(loop.tracks[1]), 
+            "\n2: ", JSON.stringify(loop.tracks[2]), 
+            "\n");
+    }
 }
 
 ///////////////////////////////////////////////////
 
 $(function() {
 
+    // TODO: Load saved loop.
+    clearLoop(false);
+
     $("#loop-bpm")
-        .val(loop.bpm)
         .click(function() {
             $(this).select();
         })
@@ -269,92 +399,37 @@ $(function() {
             var newBpm = parseInt($(this).val());
             newBpm = Math.max(1, Math.min(newBpm, 1000));
             loop.bpm = newBpm;
-            $(this).val(loop.bpm);
+            bpmDidChange();
         });
+    bpmDidChange();
 
-    $("#loop-duration")
-        .val(loop.duration / 1000)
-        .click(function() {
-            $(this).select();
-        })
-        .change(function() {
-            var newDurationSec = parseInt($(this).val() * 10) / 10;
-            loop.duration = newDurationSec * 1000;
-            $(this).val(newDurationSec);
-        });
 
-    $(".track-list li").mousedown(function() {
-        
-        $(".loop-container").addClass("recording");
+    // $("#loop-duration")
+        // .val(loop.duration / 1000)
+        // .click(function() {
+        //     $(this).select();
+        // })
+        // .change(function() {
+        //     var newDurationSec = parseInt($(this).val() * 10) / 10;
+        //     loop.duration = newDurationSec * 1000;
+        //     $(this).val(newDurationSec);
+        // });
 
+    $(".track-list li").mousedown(function() {        
         var trackNum = parseInt($(this).attr("id").split("-")[1]);
-
-        // Store the number of seconds from the beginning of the loop.
-
-        var hitStartTime = 0.0;
-        var now = timestamp();
-
-        if (playhead.startTimeSec === null) {
-            playhead.startTimeSec = now;
-            $("#play-btn").hide();
-            $("#stop-btn").show();
-            // console.log("new playhead start time:", playhead.startTimeSec);
-        }
-
-        hitStartTime = formatFloat(now - playhead.startTimeSec);
-        
-        newHit = {
-            startTimeSec: hitStartTime,
-            durationSec: 0.00
-        };
-
-        trackHits[trackNum] = newHit;
-
-
-        // Add a hit marker to the track
-
-        var now = timestamp();
-        var interval = (now - playhead.startTimeSec) * 1000.0;
-        var pctComplete = (interval / loop.duration) * 100.0;
-
-        var hitMarker = $('<div>')
-            .attr('class', 'hit-marker')
-            .attr('id', hitMarkerId(trackNum, track(trackNum).length))
-            .css('left', pctComplete+'%');
-
-        $(this).append(hitMarker);
-
-
-        // console.log("Started new hit at", now, '-', playhead.startTimeSec, '=', hitStartTime);
+        startRecordingHitOnTrack(trackNum);
     });
 
     $(".track-list li").mouseup(function() {
-
-        $(".loop-container").removeClass("recording");
-        
         var trackNum = parseInt($(this).attr("id").split("-")[1]);
-        trackHits[trackNum] = false;
-        
-        if (newHit) {
-            // var nowMillis = timestamp();
-            // var playheadTimeMillis = (nowMillis - playhead.startTimeSec);
-            // newHit.durationSec = formatFloat(playheadTimeMillis - newHit.startTimeSec);
-
-            // Add new hit to the selected track.
-            track(trackNum).push(newHit);
-
-            newHit = {};
-
-            console.log("Tracks:", 
-                "\n0: ", JSON.stringify(loop.tracks[0]), 
-                "\n1: ", JSON.stringify(loop.tracks[1]), 
-                "\n2: ", JSON.stringify(loop.tracks[2]), 
-                "\n");
-        }
-
+        stopRecordingHitOnTrack(trackNum);
     });
 
     $("#save-btn").click(function() {
+    });
+
+    $("#clear-btn").click(function() {
+        clearLoop();
     });
 
     $("#export-btn").click(function() {
@@ -363,15 +438,11 @@ $(function() {
     });
 
     $("#play-btn").click(function() {
-        playhead.startTimeSec = timestamp();
-        $("#play-btn").hide();
-        $("#stop-btn").show();
+        startPlayback();
     });    
 
     $("#stop-btn").click(function() {
-        playhead.startTimeSec = null;
-        $("#stop-btn").hide();
-        $("#play-btn").show();
+        stopPlayback();
     });
 
     $("#tap-pad").mousedown(function() {
@@ -379,6 +450,7 @@ $(function() {
         // On tap, hit at 0, 25%, 50%, 75%
 
         $(this).addClass("active");
+        $(".loop-bpm-container").addClass("active");
 
         if (!tapIn.firstTapAt) {
             tapIn.firstTapAt = now;
@@ -390,15 +462,8 @@ $(function() {
         // tapIn.firstTapAt = tapIn.firstTapAt || now;
         var previousTapAt = tapIn.lastTapAt;
 
-        if (previousTapAt) {
-            var diffSinceLastTap = (now - previousTapAt);
-
-            if (diffSinceLastTap > 3.0) {
-                // reset
-                tapIn.count = 0;
-                console.log("reseting tap-in")
-            }
-        }
+        clearTimeout(tapIn.timeout);
+        tapIn.timeout = setTimeout(maybeClearTapInCount, 3000);
 
         if (tapIn.count === 0) {
             tapIn.firstTapAt = now;
@@ -415,15 +480,7 @@ $(function() {
             loop.bpm = parseInt(60.0 * tapIn.count / diffSinceFirstTap);            
         }
 
-        // $("#tap-pad-count").html(tapIn.count);
-        $("#loop-bpm").val(loop.bpm);
-
-        if (tapIn.count < 1) {
-            // $(this).addClass("hidden");
-        }
-        else {
-        }
-
+        bpmDidChange();
     });
 
     $("#tap-pad").mouseup(function() {
@@ -432,6 +489,64 @@ $(function() {
 
         $(this).removeClass("active");
     });
+
+    $(document).keydown(function(e) {
+        console.log("key", e.keyCode);
+
+        if (e.keyCode == 38) {
+            // up
+            loop.bpm++;
+            bpmDidChange();
+            e.preventDefault();
+        }
+        else if (e.keyCode == 40) {
+            // down
+            loop.bpm--;
+            bpmDidChange();
+            e.preventDefault();
+        }
+        else if (e.keyCode == 32) {
+            // spacebar
+            togglePlay();
+            return false;
+        }
+        else if (e.keyCode == 27) {
+            // ESC
+            clearLoop();
+        }
+        else if (e.keyCode == 49) {
+            // 1
+            startRecordingHitOnTrack(0);
+        }
+        else if (e.keyCode == 50) {
+            // 2
+            startRecordingHitOnTrack(1);
+        }
+        else if (e.keyCode == 51) {
+            // 3
+            startRecordingHitOnTrack(2);
+        }
+        console.log("down", e.keyCode);
+
+    });
+
+    $(document).keyup(function(e) {
+        console.log("up", e.keyCode);
+
+        if (e.keyCode == 49) {
+            // 1
+            stopRecordingHitOnTrack(0);
+        }
+        else if (e.keyCode == 50) {
+            // 2
+            stopRecordingHitOnTrack(1);
+        }
+        else if (e.keyCode == 51) {
+            // 3
+            stopRecordingHitOnTrack(2);
+        }
+    });
+
 
     setInterval(advancePlayhead, 10);
 });
