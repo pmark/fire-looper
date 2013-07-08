@@ -50,7 +50,6 @@ function advancePlayhead() {
             // Reset playhead
             var old = playhead.startTimeSec;
             playhead.startTimeSec = timestamp();
-            pctComplete = 0.0;
 
             for (var i=0; i<3; i++) {
                 stopRecordingHitOnTrack(i);
@@ -60,6 +59,15 @@ function advancePlayhead() {
     }
 
     $("#playhead").css("left", pctComplete+"%");
+
+    if (pctComplete > 1.0 && parseInt(pctComplete) % 25 === 0) {
+        $(".beat-indicator").show();
+        $(".beat-indicator").fadeOut(loop.duration * 0.125)
+    }
+
+    if (pctComplete > 100.0) {
+        pctComplete = 0.0;
+    } 
 }
 
 function hitWidth(hit) {
@@ -193,7 +201,8 @@ function exportLoop() {
     $("#exporter .content").html(puffs.join('<br/>'))
 }
 
-function bpmDidChange() {
+function setBpm(newBpm) {
+    loop.bpm = Math.max(1, Math.min(newBpm, 1000));
     $("#loop-bpm").val(loop.bpm);
 
     // Set loop duration for 4 measures with 4 beats each.
@@ -240,11 +249,10 @@ function clearLoop(confirmation) {
     if (!confirmation || confirm("Really clear loop?")) {
         loop = {
             duration: null,  // <%= loopDuration %>
-            bpm: loop.bpm || 90,
             tracks: []
-        }
+        };
 
-        bpmDidChange();
+        setBpm(loop.bpm || 60);
 
         trackHits = [false,false,false];
 
@@ -317,6 +325,10 @@ function stopRecordingHitOnTrack(trackNum) {
     }
 }
 
+function bpmFieldFocused() {
+    return ($(document.activeElement).attr("id") === 'loop-bpm');
+}
+
 ///////////////////////////////////////////////////
 
 $(function() {
@@ -329,12 +341,8 @@ $(function() {
             $(this).select();
         })
         .change(function() {
-            var newBpm = parseInt($(this).val());
-            newBpm = Math.max(1, Math.min(newBpm, 1000));
-            loop.bpm = newBpm;
-            bpmDidChange();
+            setBpm(parseInt($(this).val()));
         });
-    bpmDidChange();
 
 
     // $("#loop-duration")
@@ -410,10 +418,8 @@ $(function() {
         if (diffSinceFirstTap > 0) {
             // If it takes diff sec to do 2 beats, 
             // how many beats would happen in 1 minute
-            loop.bpm = parseInt(60.0 * tapIn.count / diffSinceFirstTap);            
+            setBpm(parseInt(60.0 * tapIn.count / diffSinceFirstTap));
         }
-
-        bpmDidChange();
     });
 
     $("#tap-pad").mouseup(function() {
@@ -428,14 +434,12 @@ $(function() {
 
         if (e.keyCode == 38) {
             // up
-            loop.bpm++;
-            bpmDidChange();
+            setBpm(loop.bpm+1);
             e.preventDefault();
         }
         else if (e.keyCode == 40) {
             // down
-            loop.bpm--;
-            bpmDidChange();
+            setBpm(loop.bpm-1);
             e.preventDefault();
         }
         else if (e.keyCode == 32) {
@@ -454,30 +458,42 @@ $(function() {
         }
         else if (e.keyCode == 49) {
             // 1
-            startRecordingHitOnTrack(0);
+            if (!bpmFieldFocused()) {
+                startRecordingHitOnTrack(0);            
+            }
         }
         else if (e.keyCode == 50) {
             // 2
-            startRecordingHitOnTrack(1);
+            if (!bpmFieldFocused()) {
+                startRecordingHitOnTrack(1);
+            }
         }
         else if (e.keyCode == 51) {
             // 3
-            startRecordingHitOnTrack(2);
+            if (!bpmFieldFocused()) {
+                startRecordingHitOnTrack(2);
+            }
         }
     });
 
     $(document).keyup(function(e) {
         if (e.keyCode == 49) {
             // 1
-            stopRecordingHitOnTrack(0);
+            if (!bpmFieldFocused()) {
+                stopRecordingHitOnTrack(0);
+            }
         }
         else if (e.keyCode == 50) {
             // 2
-            stopRecordingHitOnTrack(1);
+            if (!bpmFieldFocused()) {
+                stopRecordingHitOnTrack(1);
+            }
         }
         else if (e.keyCode == 51) {
             // 3
-            stopRecordingHitOnTrack(2);
+            if (!bpmFieldFocused()) {
+                stopRecordingHitOnTrack(2);
+            }
         }
     });
 

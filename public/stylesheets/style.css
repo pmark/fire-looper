@@ -65,13 +65,28 @@ ul.track-list {
   opacity:.85;
   z-index:100;
   top:10px;
-  width:3px;
+  width:4px;
   height:306px;
   background-color: yellow;
   box-shadow: -2px 0px 3px rgba(0,0,0,0.5);
 }
 
-.recording #playhead {
+#playhead .beat-indicator {
+  display:none;
+  margin:auto;
+  background-color: lightyellow;
+  position:relative;
+  top:147px;
+  left:-4px;
+  border:3px solid white;
+  width:6px;
+  height:6px;
+  border-radius:6px;
+  box-shadow: 0px 0px 20px rgba(255,255,255,0.8);
+}
+
+.recording #playhead,
+.recording #playhead .beat-indicator {
   background-color: red;
   opacity:1.0;
 }
@@ -84,7 +99,7 @@ ul.track-list {
 .metadata input {
   border:none;
   background-color:transparent;
-  width:36px;
+  width:60px;
   text-align:right;
   color:yellow;
 }
