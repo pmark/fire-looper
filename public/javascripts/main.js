@@ -1,6 +1,7 @@
 // FireLooper
 
 var loop = {};
+var metronomeSound = null;
 
 var trackHits = [false,false,false];
 
@@ -61,6 +62,10 @@ function advancePlayhead() {
     $("#playhead").css("left", pctComplete+"%");
 
     if (pctComplete > 1.0 && parseInt(pctComplete) % 25 === 0) {
+
+        metronomeSound.pause();
+        metronomeSound.play();
+
         $(".beat-indicator").show();
         $(".beat-indicator").fadeOut(loop.duration * 0.125)
     }
@@ -497,6 +502,7 @@ $(function() {
         }
     });
 
+    metronomeSound = document.getElementById("click"); 
 
     setInterval(advancePlayhead, 10);
 });
