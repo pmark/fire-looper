@@ -24,15 +24,16 @@ var playingTrackState = [false, false, false];
 
 function advancePlayhead() {
 
-    var pctComplete = 0.0;
     var nowMillis = timestamp();
-    var playheadTimeMillis = (nowMillis - playhead.startTimeSec);
+    var interval = playhead.startTimeSec ? (nowMillis - playhead.startTimeSec) * 1000.0 : 0;
+    var pctComplete = (interval / loop.duration) * 100.0;
+    var playheadTimeMillis = (loop.duration * pctComplete / 100.0);
 
     if (playhead.startTimeSec !== null) {
         // Draw new hits still being sustained.
         $(trackHits).each(function(trackNum, newHit) {
             if (newHit) {            
-                newHit.durationSec = formatFloat(playheadTimeMillis - newHit.startTimeSec);
+                newHit.durationSec = formatFloat(playheadTimeMillis - newHit.startTimeSec*1000) / 1000;
                 var hitNum = track(trackNum).length;
                 var $hitElem = $("#" + hitMarkerId(trackNum, hitNum));
 
@@ -43,10 +44,6 @@ function advancePlayhead() {
                 }
             }
         });
-
-        var now = timestamp();
-        var interval = (now - playhead.startTimeSec) * 1000.0;
-        pctComplete = (interval / loop.duration) * 100.0;
 
         if (interval > loop.duration) {
             // Reset playhead
@@ -91,7 +88,7 @@ function advancePlayhead() {
 
     for (var trackNum=0; trackNum < 3; trackNum++) {
         // Get the track's state
-        var state = trackIsHittingAtTime(trackNum, playheadTimeMillis*1000.0);
+        var state = trackIsHittingAtTime(trackNum, playheadTimeMillis);
 
         // Check if it changed
         changedState = (state != playingTrackState[trackNum]);
@@ -137,26 +134,19 @@ function trackIsHittingAtTime(trackNum, ms) {
 
     if (hits && hits.length > 0) {
 
-        // !!! NO NEED TO SORT
-        // var sorted = hits.sort(function(a,b) { 
-        //     return (a.startTimeSec > b.startTimeSec);
-        // });
-
         $(hits).each(function(i, hit) {
 
             // See if given time falls within any hit.
 
-            var startTime = 1000 * hit.startTimeSec;
-            var endTime = 1000 * (hit.startTimeSec + hit.durationSec);
+            var bpmRatio = (hit.bpm / loop.bpm);
+            var startTime = 1000 * hit.startTimeSec * bpmRatio;
+            var endTime = 1000 * (hit.startTimeSec + hit.durationSec) * bpmRatio;
 
 
             if (ms >= startTime && ms <= endTime) {
                 // console.log("HIT:", ms, 'TRACK', i);
                 hitting = true;
                 return;
-            }
-            else {
-                // console.log("MISS:", ms, '>=', startTime, '&&', ms, '<=', endTime);                
             }
         });
     }
@@ -212,7 +202,7 @@ function exportLoop() {
             }
 
             if (trackState[0] || trackState[1] || trackState[2]) {
-                console.log("new cmd at", curMs)
+                // console.log("new cmd at", curMs)
                 puffCommands.push(
                     newPuffCommand(curMs, trackState[0], trackState[1], trackState[2]));                
             }
@@ -231,7 +221,7 @@ function exportLoop() {
             command.duration + ');');
     });
 
-    console.log("puffs", puffs);
+    // console.log("puffs", puffs);
 
     $("#exporter .content").html(puffs.join('<br/>'))
 }
@@ -353,6 +343,7 @@ function stopRecordingHitOnTrack(trackNum) {
     trackHits[trackNum] = false;
     
     if (newHit) {
+        newHit.bpm = loop.bpm;
         track(trackNum).push(newHit);
 
         // console.log("Tracks:", 
