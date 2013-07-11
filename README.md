@@ -1,11 +1,4 @@
-# geotemporal-mongoose: Node.js based Geotemporal item service using MongoDB with Mongoose
+fire-looper
+===========
 
-## API
-
-*/items/twitter*
-* latitude
-* longitude
-
-## License
-
-MIT Licensed
+Web based multitrack loop sequencer with Arduino program export. Used for controlling fire puffers.
