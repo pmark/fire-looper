@@ -4,10 +4,13 @@
     <title>Loop <%= loopId %></title>
     <link href="/stylesheets/normalize.css" rel="stylesheet"/>
     <link href="/stylesheets/style.css" rel="stylesheet"/>
+
+    <script src="http://code.createjs.com/createjs-2013.05.14.min.js"></script>
     <script src="/javascripts/jquery.min.js"></script>
     <script src="/javascripts/main.js"></script>
 
     <!--script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script-->
+
 </head>
 <body>
 
@@ -16,7 +19,7 @@
     <div class="content"></div>
 </div>
 
-<audio src="/audio/click.wav" id="click"></audio>
+<!-- <audio src="/audio/click.wav" id="click"></audio> -->
 
 <div class="loop-container">
     <div id="playhead"><div class="beat-indicator"></div></div>
@@ -84,5 +87,15 @@
 <br/>
 <br/>
 
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  var socket = io.connect('http://localhost');
+  socket.on('news', function (data) {
+    console.log(data);
+    socket.emit('my other event', { my: 'data' });
+  });
+</script>
+
+<div style="position:absolute; bottom:0; right:0; border:1px solid rgba(0,0,0,0.1); padding:4px;"><a href="https://github.com/pmark/fire-looper">https://github.com/pmark/fire-looper</a></div>
 </body>
 </html>

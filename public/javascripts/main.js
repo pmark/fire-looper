@@ -1,7 +1,7 @@
 // FireLooper
 
 var loop = {};
-var metronomeSound = null;
+// var metronomeSound = null;
 
 var trackHits = [false,false,false];
 
@@ -20,15 +20,16 @@ function timestamp() {
     return (new Date().getTime() / 1000.0);
 }
 
+var playingTrackState = [false, false, false];
 
 function advancePlayhead() {
 
     var pctComplete = 0.0;
+    var nowMillis = timestamp();
+    var playheadTimeMillis = (nowMillis - playhead.startTimeSec);
 
     if (playhead.startTimeSec !== null) {
-        var nowMillis = timestamp();
-        var playheadTimeMillis = (nowMillis - playhead.startTimeSec);
-
+        // Draw new hits still being sustained.
         $(trackHits).each(function(trackNum, newHit) {
             if (newHit) {            
                 newHit.durationSec = formatFloat(playheadTimeMillis - newHit.startTimeSec);
@@ -61,18 +62,47 @@ function advancePlayhead() {
 
     $("#playhead").css("left", pctComplete+"%");
 
-    if (pctComplete > 1.0 && parseInt(pctComplete) % 25 === 0) {
 
-        metronomeSound.pause();
-        metronomeSound.play();
+    if (playhead.nextMetronomePct === null || playhead.nextMetronomePct < pctComplete) {
+
+    // if (pctComplete > 1.0 && parseInt(pctComplete) % 25 === 0) {
+
+        playhead.nextMetronomePct += 25;
+
+        createjs.Sound.play("metronome");
 
         $(".beat-indicator").show();
         $(".beat-indicator").fadeOut(loop.duration * 0.125)
     }
+    else {
+        playhead.lastMetronomePctMod = parseInt(pctComplete) % 25;        
+        // console.log("else", pctComplete, playhead.lastMetronomePctMod)
+    }
 
     if (pctComplete > 100.0) {
         pctComplete = 0.0;
+        playhead.nextMetronomePct = 0;
     } 
+
+    
+    // Play the hits 
+
+    var changedState = false;
+
+    for (var trackNum=0; trackNum < 3; trackNum++) {
+        // Get the track's state
+        var state = trackIsHittingAtTime(trackNum, playheadTimeMillis*1000.0);
+
+        // Check if it changed
+        changedState = (state != playingTrackState[trackNum]);
+
+        // Set the state
+        playingTrackState[trackNum] = state;
+
+        if (state && changedState) {
+            createjs.Sound.play("sound" + trackNum);
+        }
+    }
 }
 
 function hitWidth(hit) {
@@ -223,6 +253,7 @@ function setBpm(newBpm) {
 function startPlayback() {
     if (playhead.startTimeSec === null) {
         playhead.startTimeSec = timestamp();
+        playhead.nextMetronomePct = 0;
         $("#play-btn").hide();
         $("#stop-btn").show();    
     }
@@ -281,6 +312,8 @@ function startRecordingHitOnTrack(trackNum) {
         return;
     }
     
+    createjs.Sound.play("sound" + trackNum);
+
     $(".loop-container").addClass("recording");
 
     var $track = $("#track-" + trackNum);
@@ -333,6 +366,19 @@ function stopRecordingHitOnTrack(trackNum) {
 function bpmFieldFocused() {
     return ($(document.activeElement).attr("id") === 'loop-bpm');
 }
+
+function initSound() {
+    // createjs.Sound.addEventListener("loadcomplete", soundLoadComplete);
+    createjs.Sound.registerSound({src:"/audio/click.mp3", id:"metronome"});
+    createjs.Sound.registerSound({src:"/audio/Game-Break.mp3|/audio/Game-Break.ogg", id:"sound0"});
+    createjs.Sound.registerSound({src:"/audio/Game-Death.mp3|/audio/Game-Death.ogg", id:"sound1"});
+    createjs.Sound.registerSound({src:"/audio/quick-hit.mp3", id:"sound2"});
+}
+
+// function soundLoadComplete(event) {
+//     createjs.Sound.play("sound0");
+//     createjs.Sound.play("sound1");
+// }
 
 ///////////////////////////////////////////////////
 
@@ -502,7 +548,10 @@ $(function() {
         }
     });
 
-    metronomeSound = document.getElementById("click"); 
+    // metronomeSound = document.getElementById("click"); 
+
+    initSound();
 
     setInterval(advancePlayhead, 10);
+
 });

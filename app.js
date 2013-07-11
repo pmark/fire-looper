@@ -33,10 +33,10 @@
 "use strict";
 
 var express = require("express"),
+    app = express(),
     http = require("http"),
     path = require("path"),
     mongoose = require ("mongoose"),
-    app = express(),
     publicPath = path.join(__dirname, 'public');
 
 mongoose.set('debug', true);
@@ -171,6 +171,20 @@ app.get("/", function(req, res) {
     });
 });
 
-http.createServer(app).listen(app.get("port"), function() {
+var server = http.createServer(app);
+
+server.listen(app.get("port"), function() {
     console.log("fire-looper is now listening on port " + app.get("port"));
+});
+
+var io = require('socket.io').listen(server);
+
+io.sockets.on('connection', function (socket) {
+
+  // socket.emit('news', { hello: 'world' });
+
+  // socket.on('my other event', function (data) {
+  //   console.log(data);
+  // });
+
 });
