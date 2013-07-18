@@ -277,6 +277,7 @@ function clearLoop(confirmation) {
     if (!confirmation || confirm("Really clear loop?")) {
         loop = {
             duration: null,  // <%= loopDuration %>
+            bpm:loop.bpm,
             tracks: []
         };
 
@@ -572,6 +573,6 @@ $(function() {
 
     initSound();
 
-    setInterval(advancePlayhead, 10);
+    setInterval(advancePlayhead, 5);
 
 });
