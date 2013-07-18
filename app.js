@@ -67,20 +67,21 @@ var loopSchema = new mongoose.Schema(
     id: Number,
     creator: String,
     duration: Number,
+    bpm: Number,
     tracks: 
     [
         {
             hits:
             [
                 {
-                    startTime: Number,
-                    duration: Number
+                    startTimeSec: Number,
+                    durationSec: Number,
+                    bpm: Number
                 }
             ]
         }
     ]
 });
-
 
 // Compiles the schema into a model, opening (or creating, if
 // nonexistent) the 'Loops' collection in the MongoDB database
@@ -123,31 +124,56 @@ app.configure(function() {
 
 app.get("/loops/:loopId", function(req, res) {
 
-    var responseData = {
-        loopId:"", 
-        loopDuration:6000,
-        tracks:[]
-    };
-
     if (req.params.loopId === 'new') {
         // New loop
-        res.render('loop', responseData);
+        var responseData = {
+            loopId:"", 
+            loopDuration:6000,
+            tracks:[{}, {}, {}]
+        };
+
+        res.render('loop', {loop: responseData});
     }
     else {
-        Loops.find({$id:req.params.loopId}).exec(function(err, result) { 
+        Loops.find({$_id:(new ObjectId(req.params.loopId)) }).exec(function(err, result) { 
             if (err) {
                 console.log("Error fetching loop:", req.params.loopId, err);
                 res.send(err);
             }
             else {
                 if (result) {
-                    console.log("Found loop: ", result.length);
-                    responseData.l = result[0];
-                    res.render('loop', responseData);
+                    var loop = result[0] || {};
+                    loop.tracks = loop.tracks || {};
+
+                    console.log("Found loop: ", loop);
+                    res.render('loop', {loop: loop});
                 }
             }
         });
     }
+});
+
+app.post("/loops/:loopId", function(req, res) {
+    console.log("POST to loop ", req.params.loopId);
+
+    var loopData = req.body;
+
+    // var loopData = JSON.parse(req.body);
+
+    console.log(JSON.stringify(loopData));
+    loopData.creator = "pmark";
+
+    Loops.save(loopData, function (err, savedLoop) {
+        if (err) {
+            console.log("Error saving loop:", err);
+        }
+        else {
+            console.log("Saved loop:", savedLoop);
+            res.send({redirect: ("/loops/" + savedLoop.id)});
+        }
+    });
+
+
 });
 
 app.get("/", function(req, res) {

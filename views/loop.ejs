@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Loop <%= loopId %></title>
+    <title>Loop</title>
     <link href="/stylesheets/normalize.css" rel="stylesheet"/>
     <link href="/stylesheets/style.css" rel="stylesheet"/>
 
@@ -29,7 +29,7 @@
 
     <ul class="track-list">
         <% for (var i=0; i < 3; i++) {
-            var t=tracks[i]; 
+            var t= loop.tracks[i]; 
         %>
 
         <li id="track-<%= i %>">
@@ -65,7 +65,6 @@
 </div>
 
 <div class="menu">
-<!-- <small>Loop <%= loopId %></small> -->
 <a href="#" id="play-btn">Play</a>
 <a href="#" id="stop-btn" style="display:none;">Stop</a>
 &nbsp;
@@ -94,7 +93,13 @@
     console.log(data);
     socket.emit('my other event', { my: 'data' });
   });
+
+  $(function() {
+    loop = JSON.parse('<%- JSON.stringify(loop) %>');
+  });
+
 </script>
+
 
 <div style="position:absolute; bottom:0; right:0; border:1px solid rgba(0,0,0,0.1); padding:4px;"><a href="https://github.com/pmark/fire-looper">https://github.com/pmark/fire-looper</a></div>
 </body>

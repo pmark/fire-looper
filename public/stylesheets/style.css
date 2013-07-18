@@ -16,6 +16,10 @@ body {
   color:yellow;
 }
 
+body.home {
+  padding:10px 20px;
+}
+
 a {
   color: #00B7FF;
 }

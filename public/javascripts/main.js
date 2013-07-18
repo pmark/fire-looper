@@ -66,7 +66,7 @@ function advancePlayhead() {
 
         playhead.nextMetronomePct += 25;
 
-        createjs.Sound.play("metronome");
+        playSound("metronome");
 
         $(".beat-indicator").show();
         $(".beat-indicator").fadeOut(loop.duration * 0.125)
@@ -97,7 +97,7 @@ function advancePlayhead() {
         playingTrackState[trackNum] = state;
 
         if (state && changedState) {
-            createjs.Sound.play("sound" + trackNum);
+            playSound("sound" + trackNum);
         }
     }
 }
@@ -115,8 +115,10 @@ function formatFloat(f) {
 }
 
 function track(num) {
-    loop.tracks[num] = (loop.tracks[num] || []);
-    return loop.tracks[num];
+    loop.tracks[num] = (loop.tracks[num] || {});
+    var track = loop.tracks[num];
+    track.hits = track.hits || [];
+    return track.hits;
 }
 
 function hitMarkerId(trackNum, hitNum) {
@@ -302,7 +304,7 @@ function startRecordingHitOnTrack(trackNum) {
         return;
     }
     
-    createjs.Sound.play("sound" + trackNum);
+    playSound("sound" + trackNum);
 
     $(".loop-container").addClass("recording");
 
@@ -346,11 +348,11 @@ function stopRecordingHitOnTrack(trackNum) {
         newHit.bpm = loop.bpm;
         track(trackNum).push(newHit);
 
-        // console.log("Tracks:", 
-        //     "\n0: ", JSON.stringify(loop.tracks[0]), 
-        //     "\n1: ", JSON.stringify(loop.tracks[1]), 
-        //     "\n2: ", JSON.stringify(loop.tracks[2]), 
-        //     "\n");
+        console.log("Tracks:", 
+            "\n0: ", JSON.stringify(loop.tracks[0]), 
+            "\n1: ", JSON.stringify(loop.tracks[1]), 
+            "\n2: ", JSON.stringify(loop.tracks[2]), 
+            "\n");
     }
 }
 
@@ -359,16 +361,29 @@ function bpmFieldFocused() {
 }
 
 function initSound() {
-    // createjs.Sound.addEventListener("loadcomplete", soundLoadComplete);
-    createjs.Sound.registerSound({src:"/audio/click.mp3", id:"metronome"});
-    createjs.Sound.registerSound({src:"/audio/Game-Break.mp3|/audio/Game-Break.ogg", id:"sound0"});
-    createjs.Sound.registerSound({src:"/audio/Game-Death.mp3|/audio/Game-Death.ogg", id:"sound1"});
-    createjs.Sound.registerSound({src:"/audio/quick-hit.mp3", id:"sound2"});
+    try {
+        // createjs.Sound.addEventListener("loadcomplete", soundLoadComplete);
+        createjs.Sound.registerSound({src:"/audio/click.mp3", id:"metronome"});
+        createjs.Sound.registerSound({src:"/audio/Game-Break.mp3|/audio/Game-Break.ogg", id:"sound0"});
+        createjs.Sound.registerSound({src:"/audio/Game-Death.mp3|/audio/Game-Death.ogg", id:"sound1"});
+        createjs.Sound.registerSound({src:"/audio/quick-hit.mp3", id:"sound2"});        
+    }
+    catch (e) {
+        console.log("initSound error:", e);
+    }
+}
+
+function playSound(soundId) {
+    try {
+        createjs.Sound.play(soundId);
+    }
+    catch (e) {
+    }
 }
 
 // function soundLoadComplete(event) {
-//     createjs.Sound.play("sound0");
-//     createjs.Sound.play("sound1");
+//     playSound("sound0");
+//     playSound("sound1");
 // }
 
 ///////////////////////////////////////////////////
@@ -409,6 +424,20 @@ $(function() {
     });
 
     $("#save-btn").click(function() {
+        // Send stuff to the server.
+        // Use the socket instead of this old fashioned save thing.
+
+        console.log("posting loop", loop);
+
+        // $.post("", {loop:JSON.stringify(loop)}, function(a,b) {
+        $.post("", loop, function(a,b) {
+            console.log("1st callback", a, b);
+        },
+        function(a,b) {
+            console.log("2nd callback", a, b);
+        });
+
+        return false;
     });
 
     $("#clear-btn").click(function() {

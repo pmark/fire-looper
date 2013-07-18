@@ -1,4 +1,4 @@
-1<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <title>Fire Looper</title>
@@ -7,7 +7,7 @@
     <script src="/javascripts/jquery.min.js"></script>
     <!--script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script-->
 </head>
-<body>
+<body class="home">
 
 <h3><%= loops.length %> Fire Loop<%= (loops.length == 1 ? '' : 's') %></h3>
 
@@ -15,7 +15,7 @@
     <li rel="new">+ New </li>  
 
     <% for (var i=0; i < loops.length; i++) { var l=loops[i]; %>
-    <li rel="<%= l.id %>">Loop <%= l.id %> by <%= l.creator %></li>    
+    <li rel="<%= l._id %>">Loop <%= l._id %> by <%= l.creator %></li>    
     <% } %>
 </ul>
 
@@ -27,15 +27,6 @@ $(function() {
     })
 });
 
-</script>
-
-<script src="/socket.io/socket.io.js"></script>
-<script>
-  var socket = io.connect('http://localhost');
-  socket.on('news', function (data) {
-    console.log(data);
-    socket.emit('my other event', { my: 'data' });
-  });
 </script>
 
 </body>
