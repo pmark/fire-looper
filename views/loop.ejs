@@ -28,12 +28,13 @@
     <div id="measure-3" class="measure"></div>
 
     <ul class="track-list">
-        <% for (var i=0; i < 3; i++) {
-            var t= loop.tracks[i]; 
-        %>
+        <% for (var i=0; i < 3; i++) { %>
 
         <li id="track-<%= i %>">
-        <% if (t) {
+        <% 
+        var t = (loop ? loop.tracks[i] : null);
+
+        if (t && t.hits) {
             for (var j=0; j < t.hits.length; j++) {
                 var hit = t.hits[j]; 
         %>
@@ -95,7 +96,9 @@
   });
 
   $(function() {
-    loop = JSON.parse('<%- JSON.stringify(loop) %>');
+    if (<%- loop !== null %>) {
+        loop = JSON.parse('<%- JSON.stringify(loop) %>');
+    }
   });
 
 </script>

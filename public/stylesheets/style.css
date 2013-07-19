@@ -36,8 +36,9 @@ ul.loop-list {
 }
 
 .loop-list li:hover {
-  background-color:purple;
+  background-color:rgba(255,255,255,0.15);
   cursor:pointer;
+  border-radius:4px;
 }
 
 ul.track-list {

@@ -1,6 +1,7 @@
 // FireLooper
 
 var loop = {};
+
 // var metronomeSound = null;
 
 var trackHits = [false,false,false];
@@ -23,7 +24,8 @@ function timestamp() {
 var playingTrackState = [false, false, false];
 
 function advancePlayhead() {
-
+    // if (!loop.duration) {console.log("no dur")}
+    // console.log('ap', loop)
     var nowMillis = timestamp();
     var interval = playhead.startTimeSec ? (nowMillis - playhead.startTimeSec) * 1000.0 : 0;
     var pctComplete = (interval / loop.duration) * 100.0;
@@ -44,6 +46,8 @@ function advancePlayhead() {
                 }
             }
         });
+    // console.log(loop.duration, interval)
+
 
         if (interval > loop.duration) {
             // Reset playhead
@@ -117,6 +121,7 @@ function formatFloat(f) {
 function track(num) {
     loop.tracks[num] = (loop.tracks[num] || {});
     var track = loop.tracks[num];
+    // console.log(num, "loop.tracks", track);
     track.hits = track.hits || [];
     return track.hits;
 }
@@ -239,6 +244,7 @@ function setBpm(newBpm) {
     var measuresPerMinute = loop.bpm / BEATS_PER_MEASURE;
     var secondsPerMeasure = 1 / measuresPerMinute / 60;
     loop.duration = MEASURES * secondsPerMeasure * 1000 * 1000;
+    console.log("setBpm dur:", loop.duration)
     $("#loop-duration").val(parseInt(loop.duration / 100) / 10);
 }
 
@@ -275,14 +281,8 @@ function clearLoop(confirmation) {
     confirmation = (typeof(confirmation) === 'undefined' ? true : false);
 
     if (!confirmation || confirm("Really clear loop?")) {
-        loop = {
-            duration: null,  // <%= loopDuration %>
-            bpm:loop.bpm,
-            tracks: []
-        };
-
+        loop.tracks = [];
         setBpm(loop.bpm || 60);
-
         trackHits = [false,false,false];
 
         $(".hit-marker").remove();        
@@ -339,6 +339,30 @@ function startRecordingHitOnTrack(trackNum) {
     $track.append(hitMarker);
 }
 
+function initTracks() {
+    for (var i=0; i<3; i++) {
+        var $track = $("#track-" + i);
+        var hits = track(i);
+
+        console.log("track", i, 'has', hits);
+
+        for (var hitNumber=0; hitNumber < hits.length; hitNumber++) {
+            var hit = hits[hitNumber];
+            var bpmRatio = (hit.bpm / loop.bpm);
+            var leftPct = (hit.startTimeSec*1000.0 / loop.duration) * 100.0 * bpmRatio;
+
+            console.log("pct:", leftPct);
+
+            var hitMarker = $('<div>')
+                .attr('class', 'hit-marker')
+                .attr('id', hitMarkerId(i, hits.length))
+                .css('left', pct+'%');
+
+            $track.append(hitMarker);            
+        }
+    }
+}
+
 function stopRecordingHitOnTrack(trackNum) {
     $(".loop-container").removeClass("recording");
     
@@ -393,6 +417,8 @@ $(function() {
 
     // TODO: Load saved loop.
     clearLoop(false);
+
+    initTracks();
 
     $("#loop-bpm")
         .click(function() {

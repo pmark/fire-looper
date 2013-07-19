@@ -14,8 +14,8 @@
 <ul class="loop-list">
     <li rel="new">+ New </li>  
 
-    <% for (var i=0; i < loops.length; i++) { var l=loops[i]; %>
-    <li rel="<%= l._id %>">Loop <%= l._id %> by <%= l.creator %></li>    
+    <% for (var i=loops.length-1; i >= 0 ; i--) { var l=loops[i]; console.log(i, 'loop:', l); %>
+    <li rel="<%= l._id %>">Loop #<%= i+1 %> by <%= l.creator %></li>    
     <% } %>
 </ul>
 

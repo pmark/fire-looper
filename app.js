@@ -36,68 +36,15 @@ var express = require("express"),
     app = express(),
     http = require("http"),
     path = require("path"),
-    mongoose = require ("mongoose"),
-    publicPath = path.join(__dirname, 'public');
-
-mongoose.set('debug', true);
-
-// Here we find an appropriate database to connect to, defaulting to
-// localhost if we don't find one.  
-var uristring = 
-  process.env.MONGOLAB_URI || 
-  process.env.MONGOHQ_URL || 
-  'mongodb://localhost/FireLooper';
-
-// The http server will listen to an appropriate port, or default to
-// port 5000.
-var theport = process.env.PORT || 5000;
-
-// Makes connection asynchronously.  Mongoose will queue up database
-// operations and release them when the connection is complete.
-mongoose.connect(uristring, function (err, res) {
-  if (err) { 
-    console.log ('ERROR connecting to: ' + uristring + '. ' + err);
-  } else {
-    console.log ('Succeeded connected to: ' + uristring);
-  }
-});
-
-var loopSchema = new mongoose.Schema(
-{
-    id: Number,
-    creator: String,
-    duration: Number,
-    bpm: Number,
-    tracks: 
-    [
-        {
-            hits:
-            [
-                {
-                    startTimeSec: Number,
-                    durationSec: Number,
-                    bpm: Number
-                }
-            ]
-        }
-    ]
-});
-
-// Compiles the schema into a model, opening (or creating, if
-// nonexistent) the 'Loops' collection in the MongoDB database
-
-loopSchema.index({id: 1});
-
-var Loops = mongoose.model('Loops', loopSchema);
-
+    publicPath = path.join(__dirname, 'public'),
+    Loops = require("./loops-mongoose.js"),
+    theport = process.env.PORT || 5000;;
 
 // Use this to drop all indexes:
 // Loops.collection.dropAllIndexes(function (err, results) {
 //     // Handle errors
 //     console.log("drop: ", err, results);
 // });
-
-
 
 
 // Clear out old data
@@ -126,24 +73,18 @@ app.get("/loops/:loopId", function(req, res) {
 
     if (req.params.loopId === 'new') {
         // New loop
-        var responseData = {
-            loopId:"", 
-            loopDuration:6000,
-            tracks:[{}, {}, {}]
-        };
-
-        res.render('loop', {loop: responseData});
+        res.render('loop', {loop: null});
     }
     else {
-        Loops.find({$_id:(new ObjectId(req.params.loopId)) }).exec(function(err, result) { 
+        Loops.findById(req.params.loopId).exec(function(err, result) { 
             if (err) {
                 console.log("Error fetching loop:", req.params.loopId, err);
                 res.send(err);
             }
             else {
                 if (result) {
-                    var loop = result[0] || {};
-                    loop.tracks = loop.tracks || {};
+                    var loop = result;
+                    loop.tracks = loop.tracks || [];
 
                     console.log("Found loop: ", loop);
                     res.render('loop', {loop: loop});
@@ -158,22 +99,34 @@ app.post("/loops/:loopId", function(req, res) {
 
     var loopData = req.body;
 
-    // var loopData = JSON.parse(req.body);
-
-    console.log(JSON.stringify(loopData));
-    loopData.creator = "pmark";
-
-    Loops.save(loopData, function (err, savedLoop) {
-        if (err) {
-            console.log("Error saving loop:", err);
-        }
-        else {
-            console.log("Saved loop:", savedLoop);
-            res.send({redirect: ("/loops/" + savedLoop.id)});
-        }
-    });
-
-
+    if (req.params.loopId === 'new') {
+        Loops.create(loopData,
+            function (err, savedLoop) {
+                if (err) {
+                    console.log("Error saving loop:", err);
+                }
+                else {
+                    console.log("Saved loop:", savedLoop);
+                    res.send({redirect: ("/loops/" + savedLoop.id)});
+                }
+            }
+        );
+    }
+    else {
+        Loops.findOneAndUpdate(
+            {$id:req.params.loopId},
+            loopData, 
+            function (err, savedLoop) {
+                if (err) {
+                    console.log("Error saving loop:", err);
+                }
+                else {
+                    console.log("Saved loop:", savedLoop);
+                    res.send({redirect: ("/loops/" + savedLoop.id)});
+                }
+            }
+        );        
+    }
 });
 
 app.get("/", function(req, res) {
