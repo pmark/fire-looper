@@ -14,7 +14,8 @@
     "mongoose": "3.5.7",
     "express": "~3.2.5",
     "ejs": "~0.8.4",
-    "socket.io": "~0.9.16"
+    "socket.io": "~0.9.16",
+    "johnny-five": "~0.7.0"
   },
   "changelog": [
     {

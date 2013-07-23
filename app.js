@@ -162,8 +162,58 @@ io.sockets.on('connection', function (socket) {
 
   // socket.emit('news', { hello: 'world' });
 
-  // socket.on('my other event', function (data) {
-  //   console.log(data);
-  // });
+  socket.on('puff', function (data) {
+    puffMulti(
+        data.tracks[0],
+        data.tracks[1],
+        data.tracks[2],
+        data.tracks[3],
+        data.tracks[4],
+        null);
+  });
+
+  socket.on('startPuff', function (data) {
+    console.log("startPuff");
+    puffMulti(1,0,1,0,1, null);
+  });
+
+  socket.on('endPuff', function (data) {
+    console.log("endPuff");
+    puffMulti(0,0,0,0,0, null);
+  });
 
 });
+
+
+////////
+
+var five = require("johnny-five"),
+    board, shiftRegister;
+
+board = new five.Board();
+
+// This works with the 74HC595 that comes with the SparkFun Inventor's kit.
+// Your mileage may vary with other chips. For more information on working
+// with shift registers, see http://arduino.cc/en/Tutorial/ShiftOut
+
+board.on("ready", function() {
+  shiftRegister = new five.ShiftRegister({
+    pins: {
+      data: 2,
+      clock: 3,
+      latch: 4
+    }
+  });
+});
+
+function puffMulti(p1,p2,p3,p4,p5,duration) {
+  var value = p1;
+  value += (p2 << 1);
+  value += (p3 << 2);
+  value += (p4 << 3);
+  value += (p5 << 4);
+
+  shiftRegister.send(value);
+}
+
+

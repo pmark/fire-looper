@@ -1,10 +1,13 @@
 // FireLooper
 
+var NUM_TRACKS = 5;
+var DEFAULT_BPM = 90;
 var loop = {};
+var ignoreKeydown = false;
 
 // var metronomeSound = null;
 
-var trackHits = [false,false,false];
+var trackHits = [false,false,false,false,false];
 
 var playhead = {
     position: 0.0,
@@ -21,7 +24,7 @@ function timestamp() {
     return (new Date().getTime() / 1000.0);
 }
 
-var playingTrackState = [false, false, false];
+var playingTrackState = [false, false, false, false, false];
 
 function advancePlayhead() {
     // if (!loop.duration) {console.log("no dur")}
@@ -49,15 +52,31 @@ function advancePlayhead() {
     // console.log(loop.duration, interval)
 
 
+    // TODO: figure out why last hit isn't being recorded/reported.
+    // Is duration non-zero?
+
+
         if (interval > loop.duration) {
             // Reset playhead
             var old = playhead.startTimeSec;
-            playhead.startTimeSec = timestamp();
 
-            for (var i=0; i<3; i++) {
-                stopRecordingHitOnTrack(i);
+            for (var i=0; i<NUM_TRACKS; i++) {
+                if (trackHits[i]) {
+                    ignoreKeydown = true;
+                }
+
+                var stoppedHit = stopRecordingHitOnTrack(i);
+
+                if (stoppedHit) {
+                    console.log(stoppedHit.startTimeSec*1000)
+                    stoppedHit.durationSec = (loop.duration - stoppedHit.startTimeSec*1000) / 1000;
+                }
+
                 trackHits[i] = false;
             }
+
+            playhead.startTimeSec = timestamp();
+
         }
     }
 
@@ -65,19 +84,13 @@ function advancePlayhead() {
 
 
     if (playhead.nextMetronomePct === null || playhead.nextMetronomePct < pctComplete) {
-
-    // if (pctComplete > 1.0 && parseInt(pctComplete) % 25 === 0) {
-
         playhead.nextMetronomePct += 25;
-
         playSound("metronome");
-
         $(".beat-indicator").show();
         $(".beat-indicator").fadeOut(loop.duration * 0.125)
     }
     else {
         playhead.lastMetronomePctMod = parseInt(pctComplete) % 25;        
-        // console.log("else", pctComplete, playhead.lastMetronomePctMod)
     }
 
     if (pctComplete > 100.0) {
@@ -88,22 +101,33 @@ function advancePlayhead() {
     
     // Play the hits 
 
-    var changedState = false;
+    var loopChangedState = false;
 
-    for (var trackNum=0; trackNum < 3; trackNum++) {
+    for (var trackNum=0; trackNum < NUM_TRACKS; trackNum++) {
         // Get the track's state
         var state = trackIsHittingAtTime(trackNum, playheadTimeMillis);
 
         // Check if it changed
-        changedState = (state != playingTrackState[trackNum]);
+        var trackChangedState = (state != playingTrackState[trackNum]);
+
+        if (trackChangedState) {
+            loopChangedState = true;
+        }
 
         // Set the state
         playingTrackState[trackNum] = state;
 
-        if (state && changedState) {
-            playSound("sound" + trackNum);
+        if (trackChangedState) {
+            if (state) {
+                playSound("sound" + trackNum);
+            }
         }
     }
+
+    if (loopChangedState) {
+        socket.emit("puff", {tracks:playingTrackState});
+    }
+
 }
 
 function hitWidth(hit) {
@@ -161,13 +185,15 @@ function trackIsHittingAtTime(trackNum, ms) {
     return hitting;
 }
 
-function newPuffCommand(startMs, p0, p1, p2) {
+function newPuffCommand(startMs, p0, p1, p2, p3, p4) {
     return {
         duration: null,
         startMs: startMs,
         p0: p0,
         p1: p1,
-        p2: p2
+        p2: p2,
+        p3: p3,
+        p4: p4
     };
 }
 
@@ -177,14 +203,20 @@ function exportLoop() {
     $("#exporter").fadeIn(100);
 
     var puffCommands = [];
-    var trackState = [false, false, false];
+    var trackState = [false, false, false, false, false];
 
-    for (var curMs=0; curMs < loop.duration; curMs+=50) {
+    var sampleInterval = 10;
+
+    for (var curMs=0; curMs < loop.duration+sampleInterval; curMs+=sampleInterval) {
+
+        if (curMs > loop.duration) {
+            curMs = loop.duration;
+        }
 
         // If track state for any track differs now, puff.
         var changedState = false;
 
-        for (var trackNum=0; trackNum < 3; trackNum++) {
+        for (var trackNum=0; trackNum < NUM_TRACKS; trackNum++) {
             // Get the track's state
             var state = trackIsHittingAtTime(trackNum, curMs);
 
@@ -198,7 +230,6 @@ function exportLoop() {
                 // console.log('change', trackNum, "state at", curMs, 'is', state, 'was', trackState[trackNum]);
                 break;
             }
-
         }
 
         if (changedState) {
@@ -208,24 +239,36 @@ function exportLoop() {
                 previousCommand.duration = previousCommand.duration || (curMs - previousCommand.startMs);
             }
 
-            if (trackState[0] || trackState[1] || trackState[2]) {
+            if (trackState[0] || trackState[1] || trackState[2] || trackState[3] || trackState[4]) {
                 // console.log("new cmd at", curMs)
                 puffCommands.push(
-                    newPuffCommand(curMs, trackState[0], trackState[1], trackState[2]));                
+                    newPuffCommand(curMs, trackState[0], trackState[1], trackState[2], trackState[3], trackState[4]));
+            }
+            else {
+                puffCommands.push(newPuffCommand(curMs, 0, 0, 0, 0, 0));
             }
         }
     }
 
+    // Add the last hit
+
     var puffs = [];
+
+
+    // TODO: Add a puff command at the beginning and/or end if there are no hits there.
 
     $(puffCommands).each(function(i, command) {
         // console.log(i, command);
 
-        puffs.push("puffMulti(" +
-            (command.p0 ? '1' : '0') + ', ' +
-            (command.p1 ? '1' : '0') + ', ' +
-            (command.p2 ? '1' : '0') + ', ' +
-            command.duration + ');');
+        if (command.duration) {
+            puffs.push("puffMulti(" +
+                (command.p0 ? '1' : '0') + ', ' +
+                (command.p1 ? '1' : '0') + ', ' +
+                (command.p2 ? '1' : '0') + ', ' +
+                (command.p3 ? '1' : '0') + ', ' +
+                (command.p4 ? '1' : '0') + ', ' +
+                parseInt(command.duration) + ');');            
+        }
     });
 
     // console.log("puffs", puffs);
@@ -282,8 +325,8 @@ function clearLoop(confirmation) {
 
     if (!confirmation || confirm("Really clear loop?")) {
         loop.tracks = [];
-        setBpm(loop.bpm || 60);
-        trackHits = [false,false,false];
+        setBpm(loop.bpm || DEFAULT_BPM);
+        trackHits = [false,false,false,false,false];
 
         $(".hit-marker").remove();        
     }
@@ -340,7 +383,7 @@ function startRecordingHitOnTrack(trackNum) {
 }
 
 function initTracks() {
-    for (var i=0; i<3; i++) {
+    for (var i=0; i<NUM_TRACKS; i++) {
         var $track = $("#track-" + i);
         var hits = track(i);
 
@@ -373,12 +416,14 @@ function stopRecordingHitOnTrack(trackNum) {
         newHit.bpm = loop.bpm;
         track(trackNum).push(newHit);
 
-        console.log("Tracks:", 
-            "\n0: ", JSON.stringify(loop.tracks[0]), 
-            "\n1: ", JSON.stringify(loop.tracks[1]), 
-            "\n2: ", JSON.stringify(loop.tracks[2]), 
-            "\n");
+        // console.log("Tracks:", 
+        //     "\n0: ", JSON.stringify(loop.tracks[0]), 
+        //     "\n1: ", JSON.stringify(loop.tracks[1]), 
+        //     "\n2: ", JSON.stringify(loop.tracks[2]), 
+        //     "\n");
     }
+
+    return newHit;
 }
 
 function bpmFieldFocused() {
@@ -391,7 +436,9 @@ function initSound() {
         createjs.Sound.registerSound({src:"/audio/click.mp3", id:"metronome"});
         createjs.Sound.registerSound({src:"/audio/Game-Break.mp3|/audio/Game-Break.ogg", id:"sound0"});
         createjs.Sound.registerSound({src:"/audio/Game-Death.mp3|/audio/Game-Death.ogg", id:"sound1"});
-        createjs.Sound.registerSound({src:"/audio/quick-hit.mp3", id:"sound2"});        
+        createjs.Sound.registerSound({src:"/audio/bass-drum.mp3", id:"sound2"});        
+        createjs.Sound.registerSound({src:"/audio/tamborine.mp3", id:"sound3"});        
+        createjs.Sound.registerSound({src:"/audio/horn.mp3", id:"sound4"});        
     }
     catch (e) {
         console.log("initSound error:", e);
@@ -399,6 +446,7 @@ function initSound() {
 }
 
 function playSound(soundId) {
+    // return;
     try {
         createjs.Sound.play(soundId);
     }
@@ -528,6 +576,11 @@ $(function() {
     });
 
     $(document).keydown(function(e) {
+
+        if (ignoreKeydown) {
+            return;
+        }
+
         // console.log("key", e.keyCode);
 
         if (e.keyCode == 38) {
@@ -572,9 +625,24 @@ $(function() {
                 startRecordingHitOnTrack(2);
             }
         }
+        else if (e.keyCode == 52) {
+            // 4
+            if (!bpmFieldFocused()) {
+                startRecordingHitOnTrack(3);
+            }
+        }
+        else if (e.keyCode == 53) {
+            // 5
+            if (!bpmFieldFocused()) {
+                startRecordingHitOnTrack(4);
+            }
+        }
     });
 
     $(document).keyup(function(e) {
+
+        ignoreKeydown = false;
+
         if (e.keyCode == 49) {
             // 1
             if (!bpmFieldFocused()) {
@@ -593,12 +661,24 @@ $(function() {
                 stopRecordingHitOnTrack(2);
             }
         }
+        else if (e.keyCode == 52) {
+            // 4
+            if (!bpmFieldFocused()) {
+                stopRecordingHitOnTrack(3);
+            }
+        }
+        else if (e.keyCode == 53) {
+            // 5
+            if (!bpmFieldFocused()) {
+                stopRecordingHitOnTrack(4);
+            }
+        }
     });
 
     // metronomeSound = document.getElementById("click"); 
 
     initSound();
 
-    setInterval(advancePlayhead, 5);
+    setInterval(advancePlayhead, 10);
 
 });
